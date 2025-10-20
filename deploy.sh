@@ -187,3 +187,39 @@ ssh -i "$SSH_KEY_PATH" "$SSH_USER@$SERVER_IP" << EOF
 EOF
 
 log "✅ Docker application deployed successfully."
+###############################################################################
+# 6. Configure NGINX Reverse Proxy
+###############################################################################
+
+log "🌐 Configuring NGINX reverse proxy..."
+
+ssh -i "$SSH_KEY_PATH" "$SSH_USER@$SERVER_IP" << EOF
+    set -e
+
+    echo "📝 Creating NGINX config..."
+    sudo tee /etc/nginx/sites-available/hng_proxy > /dev/null <<EOL
+server {
+    listen 80;
+    server_name _;
+
+    location / {
+        proxy_pass http://127.0.0.1:$APP_PORT;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOL
+
+    echo "🔗 Enabling NGINX config..."
+    sudo ln -sf /etc/nginx/sites-available/hng_proxy /etc/nginx/sites-enabled/default
+
+    echo "🔄 Testing and reloading NGINX..."
+    sudo nginx -t && sudo systemctl reload nginx
+
+    echo "🌍 Testing HTTP access via curl..."
+    curl -I http://127.0.0.1 || echo "⚠️ Local curl check failed, please verify manually."
+EOF
+
+log "✅ NGINX reverse proxy configured successfully."
