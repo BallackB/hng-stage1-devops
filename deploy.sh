@@ -108,3 +108,46 @@ ssh -i "$SSH_KEY_PATH" -o BatchMode=yes -o ConnectTimeout=5 "$SSH_USER@$SERVER_I
     || { error "SSH connection failed! Check IP, SSH user, or SSH key path."; exit 1; }
 
 log "✅ SSH connection validated."
+###############################################################################
+# 4. Prepare Remote Server (Docker, Docker Compose, Nginx)
+###############################################################################
+
+log "⚙️ Preparing remote server environment..."
+
+ssh -i "$SSH_KEY_PATH" "$SSH_USER@$SERVER_IP" << 'EOF'
+    set -e
+
+    echo "🔄 Updating system packages..."
+    sudo apt update -y && sudo apt upgrade -y
+
+    echo "🐳 Installing Docker..."
+    if ! command -v docker &> /dev/null; then
+        sudo apt install -y docker.io
+        sudo systemctl enable --now docker
+        echo "✅ Docker installed."
+    else
+        echo "ℹ️ Docker already installed."
+    fi
+
+    echo "📦 Installing Docker Compose..."
+    if ! command -v docker-compose &> /dev/null; then
+        sudo apt install -y docker-compose
+        echo "✅ Docker Compose installed."
+    else
+        echo "ℹ️ Docker Compose already installed."
+    fi
+
+    echo "🌐 Installing NGINX (for reverse proxy)..."
+    if ! command -v nginx &> /dev/null; then
+        sudo apt install -y nginx
+        sudo systemctl enable --now nginx
+        echo "✅ Nginx installed."
+    else
+        echo "ℹ️ Nginx already installed."
+    fi
+
+    echo "👥 Adding user to Docker group..."
+    sudo usermod -aG docker $USER
+EOF
+
+log "✅ Remote server environment prepared."
