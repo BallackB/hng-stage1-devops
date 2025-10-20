@@ -151,3 +151,39 @@ ssh -i "$SSH_KEY_PATH" "$SSH_USER@$SERVER_IP" << 'EOF'
 EOF
 
 log "✅ Remote server environment prepared."
+###############################################################################
+# 5. Transfer Project & Deploy Application
+###############################################################################
+
+log "📤 Transferring project files to remote server..."
+
+# Use rsync for efficient transfer — fallback to scp if rsync not available
+if command -v rsync &> /dev/null; then
+    rsync -avz -e "ssh -i $SSH_KEY_PATH" "$REPO_DIR/" "$SSH_USER@$SERVER_IP:/home/$SSH_USER/$REPO_DIR"
+else
+    scp -i "$SSH_KEY_PATH" -r "$REPO_DIR" "$SSH_USER@$SERVER_IP:/home/$SSH_USER/"
+fi
+
+log "🚀 Deploying Docker application on remote server..."
+
+ssh -i "$SSH_KEY_PATH" "$SSH_USER@$SERVER_IP" << EOF
+    set -e
+    cd "$REPO_DIR"
+
+    echo "🛑 Stopping any previous containers..."
+    docker compose down 2>/dev/null || docker stop \$(docker ps -q --filter "ancestor=$REPO_DIR") 2>/dev/null
+    docker rm \$(docker ps -aq --filter "ancestor=$REPO_DIR") 2>/dev/null || true
+
+    echo "⚙️ Deploying application using Docker..."
+    if [ -f docker-compose.yml ]; then
+        docker compose up -d --build
+    else
+        docker build -t $REPO_DIR .
+        docker run -d -p $APP_PORT:$APP_PORT --name hng_app $REPO_DIR
+    fi
+
+    echo "✅ Deployment complete. Checking container status..."
+    docker ps --filter "ancestor=$REPO_DIR"
+EOF
+
+log "✅ Docker application deployed successfully."
