@@ -98,3 +98,13 @@ else
 fi
 
 log "✅ Repository ready and on branch $GIT_BRANCH."
+###############################################################################
+# 3. Validate SSH Connection
+###############################################################################
+
+log "🔌 Testing SSH connectivity to $SSH_USER@$SERVER_IP..."
+
+ssh -i "$SSH_KEY_PATH" -o BatchMode=yes -o ConnectTimeout=5 "$SSH_USER@$SERVER_IP" "echo 'SSH connection successful'" \
+    || { error "SSH connection failed! Check IP, SSH user, or SSH key path."; exit 1; }
+
+log "✅ SSH connection validated."
