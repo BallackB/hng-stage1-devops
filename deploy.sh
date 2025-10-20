@@ -223,3 +223,28 @@ EOL
 EOF
 
 log "✅ NGINX reverse proxy configured successfully."
+###############################################################################
+# 7. Optional Cleanup (Idempotency Support)
+###############################################################################
+
+if [[ "$1" == "--cleanup" ]]; then
+    log "🧹 Cleanup flag detected — removing deployment artifacts..."
+
+    ssh -i "$SSH_KEY_PATH" "$SSH_USER@$SERVER_IP" << EOF
+        set -e
+        echo "🛑 Stopping containers..."
+        docker compose down 2>/dev/null || docker stop \$(docker ps -q) || true
+        docker rm \$(docker ps -aq) || true
+        docker rmi -f \$(docker images -q) || true
+
+        echo "🗑 Removing NGINX config..."
+        sudo rm -f /etc/nginx/sites-available/hng_proxy
+        sudo rm -f /etc/nginx/sites-enabled/hng_proxy
+        sudo nginx -t && sudo systemctl reload nginx || true
+
+        echo "✅ Cleanup completed."
+EOF
+
+    log "✅ Cleanup process executed successfully."
+    exit 0
+fi
