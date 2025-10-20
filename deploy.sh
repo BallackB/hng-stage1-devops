@@ -77,3 +77,24 @@ if [[ -z "$APP_PORT" ]]; then
 fi
 
 log "✅ User input collected successfully."
+###############################################################################
+# 2. Clone or Pull Repository
+###############################################################################
+
+log "📁 Preparing to clone or update repository..."
+
+# Extract repo directory name from URL
+REPO_DIR=$(basename "$GIT_REPO_URL" .git)
+
+if [[ -d "$REPO_DIR" ]]; then
+    log "📂 Repository already exists. Pulling latest changes..."
+    cd "$REPO_DIR" || exit
+    git pull origin "$GIT_BRANCH" || { error "Git pull failed!"; exit 1; }
+else
+    log "📥 Cloning repository..."
+    GIT_REPO_URL_AUTH="https://${GITHUB_PAT}@${GIT_REPO_URL#https://}"
+    git clone -b "$GIT_BRANCH" "$GIT_REPO_URL_AUTH" || { error "Git clone failed!"; exit 1; }
+    cd "$REPO_DIR" || exit
+fi
+
+log "✅ Repository ready and on branch $GIT_BRANCH."
