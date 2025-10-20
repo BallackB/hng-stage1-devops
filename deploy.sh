@@ -2,7 +2,7 @@
 
 ###############################################################################
 # HNG DevOps Stage 1 - Automated Deployment Script
-# Author: Victor Efunwa (@Ballack)
+# Author: Victor Efunwa (@BallackB)
 # Description: Automates deployment of a Dockerized app on a remote server.
 # Logs: Generates deployment logs with timestamp.
 ###############################################################################
