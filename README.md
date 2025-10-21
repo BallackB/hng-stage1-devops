@@ -3,7 +3,13 @@
 ## 👤 Author
 - **Name:** Victor Efunwa  
 - **Slack Username:** @Ballack  
-- **GitHub Username:** BallackB  
+- **GitHub Username:** BallackB
+- ## Developer
+viktorballack@gmail.com
+-  ## API Endpoint
+http://34.79.138.102
+## GitHub Repository
+https://github.com/BallackB/hng-stage1-devops
 
 ---
 
