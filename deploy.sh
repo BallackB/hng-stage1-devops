@@ -217,15 +217,14 @@ server {
 }
 EOL
 
-   echo "🔗 Enabling NGINX config..."
-sudo ln -sf /etc/nginx/sites-available/hng_proxy /etc/nginx/sites-enabled/default
+    echo "🔗 Enabling NGINX config..."
+    sudo ln -sf /etc/nginx/sites-available/hng_proxy /etc/nginx/sites-enabled/default
 
-echo "🔄 Testing and reloading NGINX..."
-sudo nginx -t && sudo systemctl reload nginx
+    echo "🔄 Testing and reloading NGINX..."
+    sudo nginx -t && sudo systemctl reload nginx
 
-echo "🌍 Testing HTTP access via curl..."
-curl -I http://127.0.0.1 || echo "⚠️ Local curl check failed, please verify manually."
-
+    echo "🌍 Testing HTTP access via curl..."
+    curl -I http://127.0.0.1 || echo "⚠️ Local curl check failed, please verify manually."
 EOF
 
 log "✅ NGINX reverse proxy configured successfully."
