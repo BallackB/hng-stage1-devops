@@ -88,7 +88,7 @@ REPO_DIR=$(basename "$GIT_REPO_URL" .git)
 
 if [[ -d "$REPO_DIR" ]]; then
     log "📂 Repository already exists. Pulling latest changes..."
-    cd "$REPO_DIR" || exit
+    cd "$HOME/$REPO_DIR" || exit
     git pull origin "$GIT_BRANCH" || { error "Git pull failed!"; exit 1; }
 else
     log "📥 Cloning repository..."
@@ -159,19 +159,24 @@ log "📤 Transferring project files to remote server..."
 
 # Use rsync for efficient transfer — fallback to scp if rsync not available
 if command -v rsync &> /dev/null; then
-    rsync -avz -e "ssh -i $SSH_KEY_PATH" "$REPO_DIR/" "$SSH_USER@$SERVER_IP:/home/$SSH_USER/$REPO_DIR"
+    # Always use the absolute path to ensure correct transfer and cd behavior
+    LOCAL_PATH="$HOME/$REPO_DIR"
+
+    log "[DEBUG] Using LOCAL_PATH = $LOCAL_PATH"
+
+    rsync -avz -e "ssh -i $SSH_KEY_PATH" --delete "$LOCAL_PATH/" "$SSH_USER@$SERVER_IP:/home/$SSH_USER/$REPO_DIR/"
 else
-    scp -i "$SSH_KEY_PATH" -r "$REPO_DIR" "$SSH_USER@$SERVER_IP:/home/$SSH_USER/"
+    scp -i "$SSH_KEY_PATH" -r "$HOME/$REPO_DIR" "$SSH_USER@$SERVER_IP:/home/$SSH_USER/"
 fi
 
 log "🚀 Deploying Docker application on remote server..."
 
 ssh -i "$SSH_KEY_PATH" "$SSH_USER@$SERVER_IP" << EOF
     set -e
-    cd "$REPO_DIR"
+    cd "/home/$SSH_USER/$REPO_DIR" || { echo "❌ Repo directory not found"; exit 1; }
 
     echo "🛑 Stopping any previous containers..."
-    docker compose down 2>/dev/null || docker stop \$(docker ps -q --filter "ancestor=$REPO_DIR") 2>/dev/null
+    docker compose down 2>/dev/null || docker stop \$(docker ps -q --filter "ancestor=$REPO_DIR") 2>/dev/null || true
     docker rm \$(docker ps -aq --filter "ancestor=$REPO_DIR") 2>/dev/null || true
 
     echo "⚙️ Deploying application using Docker..."
@@ -248,3 +253,4 @@ EOF
     log "✅ Cleanup process executed successfully."
     exit 0
 fi
+
